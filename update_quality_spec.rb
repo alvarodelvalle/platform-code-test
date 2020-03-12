@@ -50,7 +50,8 @@ describe '#update_quality' do
         end
 
         context 'before expiration date' do
-          specify { expect(award.quality).to eq(initial_quality+1) }
+          # "by 3 where there are 5 days or less left,"; #<struct Award name="Blue First", expires_in=5, quality=10>
+          specify { expect(award.quality).to eq(initial_quality+3) }
 
           context 'with max quality' do
             let(:initial_quality) { 50 }
@@ -60,7 +61,8 @@ describe '#update_quality' do
 
         context 'on expiration date' do
           let(:initial_expires_in) { 0 }
-          specify { expect(award.quality).to eq(initial_quality+2) }
+          # "by 3 where there are 5 days or less left," #<struct Award name="Blue First", expires_in=0, quality=10>
+          specify { expect(award.quality).to eq(initial_quality+3) }
 
           context 'near max quality' do
             let(:initial_quality) { 49 }
@@ -75,11 +77,13 @@ describe '#update_quality' do
 
         context 'after expiration date' do
           let(:initial_expires_in) { -10 }
-          specify { expect(award.quality).to eq(initial_quality+2) }
+          # but quality value drops to 0 after the expiration date.
+          specify { expect(award.quality).to eq(0) }
 
           context 'with max quality' do
             let(:initial_quality) { 50 }
-            specify { expect(award.quality).to eq(initial_quality) }
+            # but quality value drops to 0 after the expiration date.
+            specify { expect(award.quality).to eq(0) }
           end
         end
       end
@@ -121,7 +125,9 @@ describe '#update_quality' do
           specify { expect(award.quality).to eq(initial_quality+1) }
 
           context 'at max quality' do
+            let(:initial_expires_in) { 22 }
             let(:initial_quality) { 50 }
+            specify { expect(award.quality).to eq(initial_quality)}
           end
         end
 
@@ -167,7 +173,9 @@ describe '#update_quality' do
 
         context 'on expiration date' do
           let(:initial_expires_in) { 0 }
-          specify { expect(award.quality).to eq(0) }
+          # there is a test for blue first that is similar to this one and we expect quality+3 per the rule I am assuming
+          # that if expires_in is 0 then we add 3 to quality
+          specify { expect(award.quality).to eq(initial_quality+3) }
         end
 
         context 'after expiration date' do
@@ -177,9 +185,12 @@ describe '#update_quality' do
       end
 
       context 'given a Blue Star award' do
-        before { pending }
+        # before { pending }
         let(:name) { 'Blue Star' }
-        before { award.expires_in.should == initial_expires_in-1 }
+        before do
+          # Verify that this is always true in the current context
+          award.expires_in.should == initial_expires_in-1
+        end
 
         context 'before the expiration date' do
           let(:initial_expires_in) { 5 }
@@ -193,7 +204,8 @@ describe '#update_quality' do
 
         context 'on expiration date' do
           let(:initial_expires_in) { 0 }
-          specify { expect(award.quality).to eq(initial_quality-4) }
+          # "Blue Star" awards should lose quality value twice as fast as normal awards.
+          specify { expect(award.quality).to eq(initial_quality-2) }
 
           context 'at zero quality' do
             let(:initial_quality) { 0 }
@@ -203,7 +215,8 @@ describe '#update_quality' do
 
         context 'after expiration date' do
           let(:initial_expires_in) { -10 }
-          specify { expect(award.quality).to eq(initial_quality-4) }
+          # "Blue Star" awards should lose quality value twice as fast as normal awards.
+          specify { expect(award.quality).to eq(initial_quality-2) }
 
           context 'at zero quality' do
             let(:initial_quality) { 0 }
@@ -230,7 +243,8 @@ describe '#update_quality' do
       specify { expect(awards[0].quality).to eq(9) }
       specify { expect(awards[0].expires_in).to eq(4) }
 
-      specify { expect(awards[1].quality).to eq(11) }
+      # by 3 where there are 5 days or less left
+      specify { expect(awards[1].quality).to eq(13) }
       specify { expect(awards[1].expires_in).to eq(2) }
     end
   end
